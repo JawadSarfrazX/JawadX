@@ -41,11 +41,18 @@ export function AuthProvider({ children }) {
   };
 
   // Returns true agar email confirmation chahiye
-  const signup = async ({ name, role, email, password }) => {
+  const signup = async ({ name, role, email, password, dept, semester }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name, requested_role: role } },
+      options: {
+        data: {
+          full_name: name,
+          requested_role: role,
+          dept,
+          semester: String(semester),
+        },
+      },
     });
     if (error) throw error;
     return !data.session;

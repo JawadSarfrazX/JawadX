@@ -3,7 +3,9 @@ import { ROUTES } from "../constants/routes";
 import { useAuth } from "../store/AuthContext";
 import MainLayout from "../components/layout/MainLayout";
 import LoginPage from "../features/auth/pages/LoginPage";
+import PortalLayout from "../features/portal/components/PortalLayout";
 import PortalPage from "../features/portal/pages/PortalPage";
+import PortalCoursesPage from "../features/portal/pages/PortalCoursesPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import StudentsPage from "../features/students/pages/StudentsPage";
 import TeachersPage from "../features/teachers/pages/TeachersPage";
@@ -23,7 +25,11 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path={ROUTES.login} element={<LoginPage />} />
-      <Route path={ROUTES.portal} element={<Protected><PortalPage /></Protected>} />
+
+      <Route element={<Protected><PortalLayout /></Protected>}>
+        <Route path={ROUTES.portal} element={<PortalPage />} />
+        <Route path={ROUTES.portalCourses} element={<PortalCoursesPage />} />
+      </Route>
 
       <Route element={<Protected adminOnly><MainLayout /></Protected>}>
         <Route path={ROUTES.dashboard} element={<DashboardPage />} />
