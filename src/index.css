@@ -1,101 +1,221 @@
 @import "tailwindcss";
+
+/* Custom variant matching data-theme="dark" on <html> or any parent */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --color-brand: #f28c28;
+  --color-brand-hover: #e07b18;
   --color-ink: #26262b;
 }
-body { @apply bg-stone-100 text-ink antialiased; }
 
-/* ================= DAY MODE (light) READABILITY ================= */
-/* Sirf light mode par lagta hai. Night mode ki settings neeche alag hain. */
-:root:not([data-theme="dark"]) .text-stone-400 { color: #78716c; }
-:root:not([data-theme="dark"]) .text-stone-500 { color: #57534e; }
-:root:not([data-theme="dark"]) .text-stone-600 { color: #44403c; }
-:root:not([data-theme="dark"]) .text-stone-700 { color: #292524; }
-:root:not([data-theme="dark"]) .ring-black\/5 { --tw-ring-color: rgba(0, 0, 0, 0.1); }
-:root:not([data-theme="dark"]) .bg-white\/85 { background-color: rgba(255, 255, 255, 0.97); }
-:root:not([data-theme="dark"]) .bg-stone-100 { background-color: #f0efed; }
+/* ================= BASE / GLOBAL RESETS ================= */
+:root {
+  color-scheme: light;
+  --app-bg: #f5f4f2;
+}
 
-/* Forms: input ka andar ka text aur placeholder saaf dikhe */
-form input, form select, form textarea { color: #1c1917; }
-form input::placeholder, form textarea::placeholder { color: #78716c; opacity: 1; }
+[data-theme="dark"] {
+  color-scheme: dark;
+  --app-bg: #0d0d11;
+}
+
+body {
+  @apply bg-stone-100 text-ink antialiased;
+  background-color: var(--app-bg);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accent Selection Color */
+::selection {
+  background-color: rgba(242, 140, 40, 0.25);
+  color: inherit;
+}
+
+/* Smooth system theme switching for backgrounds and text */
+body,
+.app-shell,
+.login-shell {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ================= DAY MODE (LIGHT) READABILITY ================= */
+:root:not([data-theme="dark"]) {
+  /* Text Contrast Tuning (WCAG AA Compliant) */
+  & .text-stone-400 { color: #78716c; }
+  & .text-stone-500 { color: #57534e; }
+  & .text-stone-600 { color: #44403c; }
+  & .text-stone-700 { color: #292524; }
+
+  /* Utility Overrides for Clean Day Surfaces */
+  & .ring-black\/5 { --tw-ring-color: rgba(0, 0, 0, 0.07); }
+  & .ring-black\/10 { --tw-ring-color: rgba(0, 0, 0, 0.12); }
+  & .bg-white\/85 { background-color: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); }
+  & .bg-white\/90 { background-color: rgba(255, 255, 255, 0.96); backdrop-filter: blur(8px); }
+  & .bg-stone-100 { background-color: #f0efed; }
+}
+
+/* Form Controls (Light Mode) */
 :root:not([data-theme="dark"]) form input:not([type="checkbox"]):not([type="radio"]),
 :root:not([data-theme="dark"]) form select,
 :root:not([data-theme="dark"]) form textarea {
+  color: #1c1917;
   background-color: #ffffff;
   border: 1px solid #d6d3d1;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+
+:root:not([data-theme="dark"]) form input::placeholder,
+:root:not([data-theme="dark"]) form textarea::placeholder {
+  color: #78716c;
+  opacity: 1;
+}
+
 :root:not([data-theme="dark"]) form input:focus,
-:root:not([data-theme="dark"]) form select:focus {
+:root:not([data-theme="dark"]) form select:focus,
+:root:not([data-theme="dark"]) form textarea:focus {
   border-color: #f28c28;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 140, 40, 0.18);
 }
 
-/* ================= NIGHT MODE ================= */
-[data-theme="dark"] { color-scheme: dark; }
-[data-theme="dark"] body { background-color: #0f0f12; color: #ececf0; }
-[data-theme="dark"] .app-shell,
-[data-theme="dark"] .login-shell { background: #0f0f12; }
+/* ================= NIGHT MODE (DARK) ================= */
+[data-theme="dark"] body {
+  background-color: #0e0e12;
+  color: #ededf2;
+}
 
-/* Surfaces (cards, sidebar, topbar, modal) */
+[data-theme="dark"] .app-shell,
+[data-theme="dark"] .login-shell {
+  background-color: #0e0e12;
+}
+
+/* Surfaces & Depth Hierarchy (Cards, Modals, Popovers) */
 [data-theme="dark"] .bg-white,
 [data-theme="dark"] .bg-white\/85,
-[data-theme="dark"] .bg-white\/90 { background-color: #1c1c21; }
-[data-theme="dark"] .shadow-\[0_2px_20px_rgba\(60\,40\,10\,0\.06\)\] { box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35); }
+[data-theme="dark"] .bg-white\/90 {
+  background-color: #17171d;
+}
+
+[data-theme="dark"] .shadow-\[0_2px_20px_rgba\(60\,40\,10\,0\.06\)\] {
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Subtle Rings & Outlines for Borderless Components */
 [data-theme="dark"] .ring-black\/5 { --tw-ring-color: rgba(255, 255, 255, 0.08); }
-[data-theme="dark"] .ring-black\/10 { --tw-ring-color: rgba(255, 255, 255, 0.14); }
+[data-theme="dark"] .ring-black\/10 { --tw-ring-color: rgba(255, 255, 255, 0.15); }
 
-[data-theme="dark"] .bg-stone-50 { background-color: #232328; }
-[data-theme="dark"] .bg-stone-100 { background-color: #26262c; }
-[data-theme="dark"] .bg-stone-200 { background-color: #2e2e35; }
-[data-theme="dark"] .border-stone-100 { border-color: #2d2d33; }
-[data-theme="dark"] .hover\:bg-stone-50:hover { background-color: #26262c; }
-[data-theme="dark"] .hover\:bg-stone-100:hover { background-color: #2c2c33; }
-[data-theme="dark"] .hover\:bg-white:hover { background-color: #26262c; }
+/* Layered Neutral Containers */
+[data-theme="dark"] .bg-stone-50 { background-color: #1e1e25; }
+[data-theme="dark"] .bg-stone-100 { background-color: #24242d; }
+[data-theme="dark"] .bg-stone-200 { background-color: #2e2e38; }
+[data-theme="dark"] .border-stone-100 { border-color: rgba(255, 255, 255, 0.08); }
 
-/* Text */
-[data-theme="dark"] .text-ink { color: #ececf0; }
-[data-theme="dark"] .text-stone-400 { color: #8b8b94; }
-[data-theme="dark"] .text-stone-500 { color: #a1a1aa; }
-[data-theme="dark"] .text-stone-600 { color: #bdbdc4; }
+/* Hover States (Slightly brighter than base surface) */
+[data-theme="dark"] .hover\:bg-stone-50:hover { background-color: #24242d; }
+[data-theme="dark"] .hover\:bg-stone-100:hover { background-color: #2c2c36; }
+[data-theme="dark"] .hover\:bg-white:hover { background-color: #23232b; }
+
+/* Dark Mode Typography */
+[data-theme="dark"] .text-ink { color: #f3f3f6; }
+[data-theme="dark"] .text-stone-400 { color: #9a9aa5; }
+[data-theme="dark"] .text-stone-500 { color: #b1b1bc; }
+[data-theme="dark"] .text-stone-600 { color: #ceced6; }
+[data-theme="dark"] .text-stone-700 { color: #e4e4eb; }
 [data-theme="dark"] .text-green-600 { color: #4ade80; }
 [data-theme="dark"] .text-green-700 { color: #86efac; }
 
-/* Sidebar active item & brand accents */
-[data-theme="dark"] .bg-ink { background-color: #3a3a43; }
+/* Dark Mode Form Inputs */
+[data-theme="dark"] form input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] form select,
+[data-theme="dark"] form textarea {
+  color: #ededf2;
+  background-color: #17171d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="dark"] form input::placeholder,
+[data-theme="dark"] form textarea::placeholder {
+  color: #8b8b96;
+  opacity: 1;
+}
+
+[data-theme="dark"] form input:focus,
+[data-theme="dark"] form select:focus,
+[data-theme="dark"] form textarea:focus {
+  border-color: #f28c28;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 140, 40, 0.25);
+}
+
+/* Sidebar Active Items & Accent Overrides */
+[data-theme="dark"] .bg-ink { background-color: #2e2e38; }
 [data-theme="dark"] .bg-brand { background-color: #f28c28; }
 
-/* AI insight box (orange tint) */
-[data-theme="dark"] .bg-orange-50 { background-color: #2a1f16; }
-[data-theme="dark"] .bg-orange-100 { background-color: #3a2a1a; }
-[data-theme="dark"] .ring-orange-100 { --tw-ring-color: rgba(242, 140, 40, 0.22); }
-[data-theme="dark"] .text-orange-700 { color: #fdba74; }
+/* Accent Tints (AI Insight Boxes, Status Badges) */
+[data-theme="dark"] .bg-orange-50 { background-color: rgba(242, 140, 40, 0.10); }
+[data-theme="dark"] .bg-orange-100 { background-color: rgba(242, 140, 40, 0.18); }
+[data-theme="dark"] .ring-orange-100 { --tw-ring-color: rgba(242, 140, 40, 0.30); }
+[data-theme="dark"] .text-orange-700 { color: #ffb066; }
 [data-theme="dark"] .bg-green-100 { background-color: rgba(34, 197, 94, 0.16); }
 
 /* ================= DASHBOARD ANIMATIONS ================= */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes barGrow {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
+
 @keyframes donutIn {
-  from { opacity: 0; transform: rotate(-120deg) scale(0.85); }
-  to { opacity: 1; transform: rotate(-90deg) scale(1); }
+  from {
+    opacity: 0;
+    transform: rotate(-120deg) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-90deg) scale(1);
+  }
 }
 
 .anim-fade-up {
-  animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
+
 .anim-bar {
   transform-origin: left;
-  animation: barGrow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: barGrow 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform;
 }
+
 .anim-donut {
-  animation: donutIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: donutIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-fade-up, .anim-bar, .anim-donut { animation: none; }
+  .anim-fade-up,
+  .anim-bar,
+  .anim-donut {
+    animation: none !important;
+    transition: none !important;
+  }
 }

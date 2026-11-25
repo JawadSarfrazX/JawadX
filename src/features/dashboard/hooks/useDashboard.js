@@ -1,19 +1,44 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../services/supabase";
 
-const CATEGORIES = ["Tuition", "Hostel", "Exam", "Other"];
-const CATEGORY_COLORS = {
-  Tuition: "#f28c28",
-  Hostel: "#26262b",
-  Exam: "#8a8a8f",
-  Other: "#d6d3d1",
-};
 const STAGES = [
-  { key: "applied", name: "Applied", tone: "bg-brand" },
-  { key: "interviewed", name: "Interviewed", tone: "bg-ink" },
-  { key: "admitted", name: "Admitted", tone: "bg-ink" },
-  { key: "enrolled", name: "Enrolled", tone: "bg-ink" },
+  { key: "applied", name: "Applied" },
+  { key: "interviewed", name: "Interviewed" },
+  { key: "admitted", name: "Admitted" },
+  { key: "enrolled", name: "Enrolled" },
 ];
+
+function lastSixMonths() {
+  const now = new Date();
+  return Array.from({ length: 6 }, (_, i) => {
+    const start = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+    return {
+      key: `${start.getFullYear()}-${start.getMonth()}`,
+      label: start.toLocaleString("en", { month: "short" }),
+      end,
+      total: 0,
+    };
+  });
+}
+
+// Har mahine ke end tak total kitne rows thay (cumulative growth)
+async function cumulativeTrend(table) {
+  const { data, error } = await supabase.from(table).select("created_at");
+  if (error) throw error;
+  const months = lastSixMonths();
+  const dates = (data ?? []).map((r) => new Date(r.created_at));
+  return months.map((m) => dates.filter((d) => d < m.end).length);
+}
+
+// Aakhri mahine ka pichle mahine se percent farq
+function growth(series) {
+  const prev = series.at(-2);
+  const cur = series.at(-1);
+  if (!prev) return "";
+  const pct = Math.round(((cur - prev) / prev) * 100);
+  return `${pct >= 0 ? "+" : ""}${pct}%`;
+}
 
 async function countRows(table) {
   const { count, error } = await supabase
@@ -24,13 +49,7 @@ async function countRows(table) {
 }
 
 export default function useDashboard() {
-  const [data, setData] = useState({
-    stats: [],
-    funnel: [],
-    fees: { parts: [] },
-    topStudents: [],
-    insight: null,
-  });
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,57 +62,100 @@ export default function useDashboard() {
           countRows("teachers"),
           countRows("courses"),
         ]);
+        const [studentTrend, teacherTrend, courseTrend] = await Promise.all([
+          cumulativeTrend("students"),
+          cumulativeTrend("teachers"),
+          cumulativeTrend("courses"),
+        ]);
 
-        const { data: apps, error: appsError } = await supabase
+        const { data: apps, error: appsErr } = await supabase
           .from("applications")
           .select("stage");
-        if (appsError) throw appsError;
+        if (appsErr) throw appsErr;
 
-        const { data: fees, error: feesError } = await supabase
+        const { data: fees, error: feesErr } = await supabase
           .from("fees")
-          .select("category, amount, paid");
-        if (feesError) throw feesError;
+          .select("amount, paid, created_at");
+        if (feesErr) throw feesErr;
 
-        // Funnel: har stage tak pahunchne wale applications
+        const { data: recentStudents, error: rsErr } = await supabase
+          .from("students")
+          .select("student_code, name, dept, created_at")
+          .order("created_at", { ascending: false })
+          .limit(5);
+        if (rsErr) throw rsErr;
+
+        const { data: courseRows, error: crErr } = await supabase
+          .from("courses")
+          .select("id, code, title, teacher:teachers(name), enrollments(count)")
+          .order("created_at", { ascending: false })
+          .limit(6);
+        if (crErr) throw crErr;
+
+        // Funnel
         const total = apps.length;
         const funnel = STAGES.map((st, i) => {
-          const count = apps.filter((a) => STAGES.findIndex((s) => s.key === a.stage) >= i).length;
+          const count = apps.filter(
+            (a) => STAGES.findIndex((s) => s.key === a.stage) >= i
+          ).length;
           return {
             name: st.name,
             count,
             percent: total ? Math.round((count / total) * 100) : 0,
-            tone: st.tone,
           };
         });
 
-        // Fees: sirf paid amount
+        // Fees: paid amount aur last 6 mahine ka breakdown
         const paid = fees.filter((f) => f.paid);
-        const totalPaid = paid.reduce((sum, f) => sum + Number(f.amount), 0);
-        const parts = CATEGORIES.map((cat) => ({
-          label: cat,
-          value: paid
-            .filter((f) => f.category === cat)
-            .reduce((sum, f) => sum + Number(f.amount), 0),
-          color: CATEGORY_COLORS[cat],
-        })).filter((p) => p.value > 0);
+        const totalPaid = paid.reduce((s, f) => s + Number(f.amount), 0);
+        const months = lastSixMonths();
+        paid.forEach((f) => {
+          const d = new Date(f.created_at);
+          const m = months.find((x) => x.key === `${d.getFullYear()}-${d.getMonth()}`);
+          if (m) m.total += Number(f.amount);
+        });
+        const feeTrend = months.map((m) => m.total);
+        const maxMonth = Math.max(0, ...feeTrend);
 
         if (!alive) return;
         setData({
           stats: [
-            { key: "students", label: "Total Students", value: students.toLocaleString(), delta: "" },
-            { key: "teachers", label: "Teachers", value: teachers.toLocaleString(), delta: "" },
-            { key: "courses", label: "Active Courses", value: courses.toLocaleString(), delta: "" },
             {
-              key: "fees",
+              label: "Total Students",
+              value: students.toLocaleString(),
+              delta: growth(studentTrend),
+              trend: studentTrend,
+            },
+            {
+              label: "Teachers",
+              value: teachers.toLocaleString(),
+              delta: growth(teacherTrend),
+              trend: teacherTrend,
+            },
+            {
+              label: "Active Courses",
+              value: courses.toLocaleString(),
+              delta: growth(courseTrend),
+              trend: courseTrend,
+            },
+            {
               label: "Fees Collected",
-              value: `Rs ${totalPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
-              delta: "",
+              value: `Rs ${totalPaid.toLocaleString()}`,
+              delta: growth(feeTrend),
+              trend: feeTrend,
             },
           ],
           funnel,
-          fees: { parts },
-          topStudents: [],
-          insight: null,
+          fees: { months, max: maxMonth },
+          courses: (courseRows ?? []).map((c) => ({
+            id: c.id,
+            code: c.code,
+            title: c.title,
+            instructor: c.teacher?.name ?? "—",
+            students: c.enrollments?.[0]?.count ?? 0,
+          })),
+          recentStudents: recentStudents ?? [],
+          attendance: null,
         });
       } catch (err) {
         console.error(err);
