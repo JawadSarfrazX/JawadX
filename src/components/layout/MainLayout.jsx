@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import ChatWidget from "../../features/chat/components/ChatWidget";
 
 export default function MainLayout() {
   const location = useLocation();
@@ -21,14 +22,13 @@ export default function MainLayout() {
           <Topbar />
 
           {/* Animated Page Transition Area */}
-          <div
-            key={location.pathname}
-            className="flex-1 animate-in fade-in duration-300"
-          >
+          <div key={location.pathname} className="flex-1 animate-in fade-in duration-300">
             <Outlet />
           </div>
         </main>
       </div>
+
+      <ChatWidget />
     </div>
   );
 }
